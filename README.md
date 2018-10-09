@@ -210,3 +210,10 @@ aws cognito-idp admin-link-provider-for-user \
 --destination-user ProviderName=Cognito,ProviderAttributeName=UNUSED,ProviderAttributeValue=11111111-2222-3333-4444-555555555555 \
 --source-user ProviderName=Facebook,ProviderAttributeName=Cognito_Subject,ProviderAttributeValue=10160899012520414
 ```
+
+## Alternatives
+
+* https://firebase.google.com/docs/auth/ ([pricing](https://firebase.google.com/pricing/), [UI](https://github.com/firebase/FirebaseUI-Web))
+* https://docs.microsoft.com/en-us/azure/app-service/app-service-authentication-overview
+* https://auth0.com/
+* https://developers.facebook.com/products/account-creation
