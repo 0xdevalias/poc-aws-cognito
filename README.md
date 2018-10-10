@@ -27,7 +27,32 @@ amplify init
 amplify auth add
 ```
 
-This seems to create a verbose (~300 lines) CloudFormation template.. it probably doesn't need to be so big, but there are a lot of parameters and options passed in. I feel like we could do better manually.. though the 'fully integrated' aspect of this would be nice. Learning from what is done here + what we played with above would probably be useful.
+This seems to create a verbose (~300 lines) CloudFormation template.. it probably doesn't need to be so big, but there are a lot of parameters and options passed in:
+
+* https://github.com/aws-amplify/amplify-cli/blob/master/packages/amplify-category-auth/provider-utils/awscloudformation/cloudformation-templates/auth-template.yml.ejs
+  * SNSRole (AWS::IAM::Role)
+  * UserPool (AWS::Cognito::UserPool)
+  * UserPoolClientWeb (AWS::Cognito::UserPoolClient)
+  * UserPoolClient (AWS::Cognito::UserPoolClient)
+  * UserPoolClientRole (AWS::IAM::Role)
+  * UserPoolClientLambda (AWS::Lambda::Function)
+  * UserPoolClientLambdaPolicy (AWS::IAM::Policy)
+  * UserPoolClientLogPolicy (AWS::IAM::Policy)
+  * UserPoolClientInputs (Custom::LambdaCallout)
+  * MFALambdaRole (AWS::IAM::Role)
+  * MFALambda (AWS::Lambda::Function)
+  * MFALambdaPolicy (AWS::IAM::Policy)
+  * MFALogPolicy (AWS::IAM::Policy)
+  * MFALambdaInputs (Custom::LambdaCallout)
+  * OpenIdLambdaRole (AWS::IAM::Role)
+  * OpenIdLambda (AWS::Lambda::Function)
+  * OpenIdLambdaIAMPolicy (AWS::IAM::Policy)
+  * OpenIdLogPolicy (AWS::IAM::Policy)
+  * OpenIdLambdaInputs (Custom::LambdaCallout)
+  * IdentityPool (AWS::Cognito::IdentityPool)
+  * IdentityPoolRoleMap (AWS::Cognito::IdentityPoolRoleAttachment)
+
+I feel like we could tune things better manually.. though the 'fully integrated' aspect of this would be nice. Learning from what is done here + what we played with above would probably be useful.
 
 You can then wire it into a React/similar frontend, or use the hosted auth UI, etc:
 
