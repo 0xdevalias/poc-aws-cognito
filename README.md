@@ -270,6 +270,21 @@ aws cognito-idp admin-link-provider-for-user \
 --source-user ProviderName=Facebook,ProviderAttributeName=Cognito_Subject,ProviderAttributeValue=10160899012520414
 ```
 
+Related API's:
+
+* [AdminLinkProviderForUser](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminLinkProviderForUser.html)
+* [AdminDisableProviderForUser](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminDisableProviderForUser.html)
+
+It is also possible to handle 'linking' accounts using the federated identity API's, with a number of the 'Get' type endpoints actually allowing creation/linking as well:
+
+* [GetId](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_GetId.html)
+* [GetCredentialsForIdentity](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_GetCredentialsForIdentity.html)
+* [GetOpenIdToken](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_GetOpenIdToken.html)
+* [GetOpenIdTokenForDeveloperIdentity](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_GetOpenIdTokenForDeveloperIdentity.html)
+* [DescribeIdentity](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_DescribeIdentity.html)
+* [UnlinkIdentity](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_UnlinkIdentity.html)
+* [UnlinkDeveloperIdentity](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/API_UnlinkDeveloperIdentity.html)
+
 ## Alternatives
 
 * https://firebase.google.com/docs/auth/ ([pricing](https://firebase.google.com/pricing/), [UI](https://github.com/firebase/FirebaseUI-Web))
