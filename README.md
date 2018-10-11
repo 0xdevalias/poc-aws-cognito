@@ -14,6 +14,13 @@ Unfortunately, it seems it's not currently possible to export these settings as 
 
 * https://stackoverflow.com/questions/44503800/how-to-export-cognito-user-pool-settings-to-cloudformation-template
 
+There are two main parts to Cognito:
+
+* [Amazon Cognito User Pools](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/cognito-user-identity-pools.html) ([API](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/Welcome.html))
+* [Amazon Cognito Federated Identities (Identity Pool)](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/cognito-identity.html) ([API](https://docs.aws.amazon.com/cognitoidentity/latest/APIReference/Welcome.html), [Auth Flow](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/authentication-flow.html), [Developer Authenticated Identities](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/developer-authenticated-identities.html))
+
+The distinctions between both are pretty unclear at times, and depending on your usecase, you may need one/the other, or even both. Identity Pools are older, and don't have built in sign up and user/password type features (though can link to a User Pool identity as one of the linked identities). User pools are newer and have these signup/login features, but their support for federation/social login can be limited at the moment (eg. lack of API's, only available through hosted login UI, etc). Amplify seems to use both of these together to implement social login and similar.
+
 ## Amplify (CLI, JS)
 
 This is designed to help us to easily add feature sets to our applications, for example, authentication. It can handle both the backend features (from the CLI) and frontend (from the JS):
@@ -214,6 +221,33 @@ ReactDOM.render(<AppWithAuth federated={federated}/>, document.getElementById('r
 
 // ..snip..
 ```
+
+## How to make Cognito Passwordless / Magic Link
+
+While it isn't currently natively supported (ref [1](https://github.com/aws/amazon-cognito-auth-js/issues/18), [2](https://stackoverflow.com/questions/45666794/aws-cognito-user-pool-without-a-password)), it should be possible to implement a ['passwordless'/magic token signin](https://aws.amazon.com/blogs/startups/increase-engagement-and-enhance-security-with-passwordless-authentication/) flow using [Custom Authentication Flow](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/amazon-cognito-user-pools-authentication-flow.html#amazon-cognito-user-pools-custom-authentication-flow):
+
+* API's: [InitiateAuth](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html)(CUSTOM_AUTH) -> [RespondToAuthChallenge](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_RespondToAuthChallenge.html)
+* Admin API's: [AdminInitiateAuth](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminInitiateAuth.html), [AdminRespondToAuthChallenge](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminRespondToAuthChallenge.html)
+* [Lambda Triggers](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/cognito-user-identity-pools-working-with-aws-lambda-triggers.html): [DefineAuthChallenge](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-define-auth-challenge.html), [CreateAuthChallenge](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-create-auth-challenge.html), [VerifyAuthChallengeResponse](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-verify-auth-challenge-response.html)
+
+To implement this, using the above API's/Lambda triggers, you would do something like:
+
+* Initiate a custom auth flow passing along the username/device key ([InitiateAuth](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_InitiateAuth.html)/[AdminInitiateAuth](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminInitiateAuth.html))
+* Handle whatever needs to be done with [DefineAuthChallenge](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-define-auth-challenge.html) to say to use our 'passwordless' flow
+* Within [CreateAuthChallenge](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-create-auth-challenge.html)
+  * Lookup the user on the backend ([AdminGetUser](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminGetUser.html))
+  * Extract their email address from the [user attributes](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_AdminGetUser.html#CognitoUserPools-AdminGetUser-response-UserAttributes)
+  * Generate a secret code and send it to the user via email/sms (using AWS SES/SNS, etc), this should store the token within the `privateChallengeParameters` attribute
+* The user should receive an email with the secret token, ideally linked to a page on your frontend application that would then trigger the [VerifyAuthChallengeResponse](https://docs.amazonaws.cn/en_us/cognito/latest/developerguide/user-pool-lambda-verify-auth-challenge-response.html) step (via `RespondToAuthChallenge`)
+  * Ensure that the secret code provided in the `challengeAnswer` matches the one previously stored in the `privateChallengeParameters`. If they match, set `answerCorrect` to `true`
+* If this was the only step in the custom auth flow, the user should be successfully authenticated and receive their 'signed in token' back
+
+It may be possible to leverage existing MFA features to skip having to implement the 'send email' flow described above. As part of the custom auth flow, you would return a challenge type of `SMS_MFA`. Theoretically this would then allow you to confirm the user just from the MFA code alone. One downside of this is that you probably wouldn't be able to use email for the sign in link.
+
+It might be possible to leverage existing 'verify attribute' features to avoid having to manually handle the email/SMS flow, but since you may already need to be authenticated for this it might not work:
+
+* [GetUserAttributeVerificationCode](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_GetUserAttributeVerificationCode.html)
+* [VerifyUserAttribute](https://docs.aws.amazon.com/cognito-user-identity-pools/latest/APIReference/API_VerifyUserAttribute.html)
 
 ## Potential Issues / Concerns
 
